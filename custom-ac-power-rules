@@ -1,0 +1,20 @@
+#!/bin/bash
+
+cpuCount=$(ls /sys/devices/system/cpu | grep 'cpu[0-9]\+' | wc -l);
+maxMhz=$(( $(lscpu -p=MAXMHZ | tail -n 1 | cut -f1 -d".") * 1000 ))
+
+echo -n 0 > /sys/devices/system/cpu/intel_pstate/no_turbo
+echo -n 100 > /sys/devices/system/cpu/intel_pstate/max_perf_pct
+echo -n 50 > /sys/devices/system/cpu/intel_pstate/min_perf_pct
+echo -n 5000 > /sys/class/backlight/intel_backlight/brightness
+
+for ((i = 1; i <= $cpuCount; i++ ))
+do
+    echo 1 > /sys/devices/system/cpu/cpu$(($i - 1))/online
+    echo performance > /sys/devices/system/cpu/cpu$(($i-1))/cpufreq/scaling_governor
+    echo -n $maxMhz > /sys/devices/system/cpu/cpu$(($i-1))/cpufreq/scaling_max_freq
+done
+
+nvidia-settings -a "[gpu:0]/GpuPowerMizerMode=2"
+
+exit 0

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+cpuCount=$(ls /sys/devices/system/cpu | grep 'cpu[0-9]\+' | wc -l);
+
+echo -n 1 > /sys/devices/system/cpu/intel_pstate/no_turbo
+echo -n 40 > /sys/devices/system/cpu/intel_pstate/max_perf_pct
+echo -n 20 > /sys/devices/system/cpu/intel_pstate/min_perf_pct
+echo -n 3000 > /sys/class/backlight/intel_backlight/brightness
+
+for ((i = 1; i <= $cpuCount; i++ ))
+do
+    echo powersave > /sys/devices/system/cpu/cpu$(($i-1))/cpufreq/scaling_governor
+    echo -n 800000 > /sys/devices/system/cpu/cpu$(($i-1))/cpufreq/scaling_max_freq
+
+    if [ $(( $i % 2 )) == 0 ]
+    then
+        echo 0 > /sys/devices/system/cpu/cpu$(($i - 1))/online
+    fi
+done
+
+nvidia-settings -a "[gpu:0]/GpuPowerMizerMode=0"
+
+# Powertop-recommended settings
+echo -n 1500 > /proc/sys/vm/dirty_writeback_centisecs
+for dir in /sys/bus/i2c/devices/*; do
+    echo 'auto' > $dir/device/power/control;
+done
+
+exit 0
